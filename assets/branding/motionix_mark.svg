@@ -1,0 +1,8 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'>
+  <defs><mask id='playhole'><rect x='0' y='0' width='1024' height='1024' fill='white'/><path d='M 446 399 L 446 614 L 602 512 Z' fill='black' stroke='black' stroke-width='44' stroke-linejoin='round' stroke-linecap='round'/></mask><linearGradient id='gl' x1='0.85' y1='0' x2='0.15' y2='1'><stop offset='0%' stop-color='#1FA8FF'/><stop offset='40%' stop-color='#3F4BEE'/><stop offset='72%' stop-color='#7C2CF2'/><stop offset='100%' stop-color='#D931F5'/></linearGradient><linearGradient id='gr' x1='0.15' y1='0' x2='0.85' y2='1'><stop offset='0%' stop-color='#FFC02E'/><stop offset='50%' stop-color='#FF3E9D'/><stop offset='100%' stop-color='#F92B7B'/></linearGradient></defs>
+  <g mask='url(#playhole)'>
+    <path d='M 348 292 C 262 305 218 395 218 505 C 218 615 262 705 348 722 C 440 700 500 610 520 530 C 575 515 610 485 642 460 C 615 415 565 395 510 392 C 455 378 385 318 348 292 Z' fill='url(#gl)'/>
+    <path d='M 676 292 C 762 305 806 395 806 505 C 806 615 762 705 676 710 C 640 690 545 640 460 590 C 505 545 555 528 598 522 C 575 490 552 425 540 404 C 528 378 566 330 676 292 Z' fill='url(#gr)'/>
+    <path d='M 622 348 C 578 362 538 388 508 420 C 542 380 588 350 634 330 C 630 336 626 342 622 348 Z' fill='url(#gr)'/>
+  </g>
+</svg>

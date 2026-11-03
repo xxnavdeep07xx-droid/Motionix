@@ -1,0 +1,38 @@
+name: motionix
+description: "Motionix — pro video editing that fits in 4 GB. Phase 1: engine proof."
+publish_to: 'none'
+
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # dart:ffi helpers (Utf8, malloc) for the C++ core bridge
+  ffi: ^2.1.0
+
+  cupertino_icons: ^1.0.8
+
+  # Media pipeline
+  video_player: ^2.9.2
+  path_provider: ^2.1.4
+  share_plus: ^10.0.0
+
+  # Brand mark rendering
+  flutter_svg: ^2.0.10+1
+
+  # Clip import from the gallery
+  image_picker: ^1.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/branding/
