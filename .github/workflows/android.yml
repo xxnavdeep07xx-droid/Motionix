@@ -77,7 +77,24 @@ jobs:
           MOTIONIX_STORE_PASSWORD: ${{ secrets.CI_KEYSTORE_PASSWORD }}
           MOTIONIX_KEY_ALIAS: ${{ secrets.CI_KEY_ALIAS }}
           MOTIONIX_KEY_PASSWORD: ${{ secrets.CI_KEY_PASSWORD }}
-        run: flutter build apk --release
+        run: flutter build apk --release --target-platform android-arm64
+
+      # android:testOnly="true" on <application> makes every Android
+      # installer reject the APK ("package appears to be invalid"). AGP can
+      # inject it via IDE-run properties; this gate proves it is absent.
+      # NOTE: aapt2 xmltree renders boolean attributes as (type 0x12)0xffffffff
+      # (true) / 0x0 (false), so match that form as well as ="true".
+      - name: Fail if APK is testOnly
+        run: |
+          set -euo pipefail
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          AAPT2="$(find "$ANDROID_HOME/build-tools" -name aapt2 -type f | sort -V | tail -1)"
+          echo "Using $AAPT2"
+          "$AAPT2" dump xmltree --file AndroidManifest.xml "$APK" | tee manifest-tree.log
+          if grep 'android:testOnly' manifest-tree.log | grep -Eq '(type 0x12)0xffffffff|="true"'; then
+            echo "::error::APK is testOnly - installers will reject it"
+            exit 1
+          fi
 
       # AGP suppresses v1 (JAR) signing when minSdk >= 24 even with
       # enableV1Signing = true (verified in run #4), leaving a v2-only APK
@@ -145,7 +162,7 @@ jobs:
           {
             echo "## Motionix v${VERSION} — Phase 1 engine proof"
             echo
-            echo "arm64-v8a release APK (Android 7.0+, ~51 MB)."
+            echo "Single-ABI arm64-v8a release APK (Android 7.0+)."
             echo
             echo "Install: open this page on your phone, download the APK below, then"
             echo "tap it in your notifications/Downloads and allow"
