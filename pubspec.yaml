@@ -2,7 +2,7 @@ name: motionix
 description: "Motionix — pro video editing that fits in 4 GB. Phase 1: engine proof."
 publish_to: 'none'
 
-version: 0.1.3+4
+version: 0.1.4+5
 
 environment:
   sdk: ^3.13.7

@@ -112,13 +112,19 @@ jobs:
 
       # A cryptographically verified signature is a release gate: if the
       # APK cannot be verified, the run fails and nothing is published.
+      # NOTE: plain `apksigner verify` evaluates the APK only against the
+      # platform range from its own manifest (minSdk 24+) where v1 is not
+      # required, so it reports v1: false even when valid v1 signatures are
+      # present. --min-sdk-version 23 forces the legacy-platform check,
+      # proving the v1 (JAR) signature that OEM installers (Vivo etc.)
+      # expect is really there.
       - name: Verify APK signature (release gate)
         run: |
           set -euo pipefail
           APK=build/app/outputs/flutter-apk/app-release.apk
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)"
           echo "Using $APKSIGNER"
-          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee apksigner.log
+          "$APKSIGNER" verify --verbose --print-certs --min-sdk-version 23 "$APK" | tee apksigner.log
           if [ -f android/app/keys/ci-test-signing.jks ]; then
             grep -Eq "Verified using v1 scheme \(JAR signing\): true" apksigner.log \
               || { echo "::error::v1 (JAR) signature missing - OEM installers need it"; exit 1; }
