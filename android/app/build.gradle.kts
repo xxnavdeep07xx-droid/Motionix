@@ -76,6 +76,19 @@ android {
                 else signingConfigs.getByName("debug")
         }
     }
+
+    // The Flutter Gradle plugin adds libdartjni.so for every ABI regardless
+    // of --target-platform; Phase 1 ships arm64-v8a only.
+    packaging {
+        jniLibs {
+            excludes += listOf(
+                "lib/armeabi-v7a/**",
+                "lib/armeabi/**",
+                "lib/x86/**",
+                "lib/x86_64/**",
+            )
+        }
+    }
 }
 
 kotlin {
