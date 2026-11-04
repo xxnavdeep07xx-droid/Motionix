@@ -57,6 +57,14 @@ android {
                 storePassword = System.getenv("MOTIONIX_STORE_PASSWORD") ?: "motionix-ci-test"
                 keyAlias = System.getenv("MOTIONIX_KEY_ALIAS") ?: "motionix"
                 keyPassword = System.getenv("MOTIONIX_KEY_PASSWORD") ?: "motionix-ci-test"
+                // AGP drops v1 (JAR) signing when minSdk >= 24, leaving a
+                // v2-only APK. Vivo's Funtouch OS installer (i Manager scan)
+                // cannot parse v2-only sideloaded APKs and rejects them with
+                // "App not installed as package appears to be invalid".
+                // Force the full legacy + modern scheme set.
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
             }
         }
     }
