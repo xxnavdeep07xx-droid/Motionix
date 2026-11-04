@@ -79,10 +79,39 @@ jobs:
           MOTIONIX_KEY_PASSWORD: ${{ secrets.CI_KEY_PASSWORD }}
         run: flutter build apk --release
 
+      # AGP suppresses v1 (JAR) signing when minSdk >= 24 even with
+      # enableV1Signing = true (verified in run #4), leaving a v2-only APK
+      # that Vivo's Funtouch OS installer rejects as "package appears to be
+      # invalid". Signing is therefore done explicitly here, after the
+      # build, with the full scheme set: zipalign -> v1+v2+v3.
+      - name: Sign APK with full v1+v2+v3 scheme set
+        env:
+          MOTIONIX_STORE_PASSWORD: ${{ secrets.CI_KEYSTORE_PASSWORD }}
+          MOTIONIX_KEY_ALIAS: ${{ secrets.CI_KEY_ALIAS }}
+          MOTIONIX_KEY_PASSWORD: ${{ secrets.CI_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          if [ ! -f android/app/keys/ci-test-signing.jks ]; then
+            echo "No CI key decoded - keeping AGP-signed APK (fork build)."
+            exit 0
+          fi
+          BT="$(dirname "$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)")"
+          echo "Using build-tools at $BT"
+          "$BT/zipalign" -f -p 4 "$APK" app-release-aligned.apk
+          "$BT/apksigner" sign \
+            --ks android/app/keys/ci-test-signing.jks \
+            --ks-key-alias "${MOTIONIX_KEY_ALIAS:-motionix}" \
+            --ks-pass "pass:${MOTIONIX_STORE_PASSWORD:-motionix-ci-test}" \
+            --key-pass "pass:${MOTIONIX_KEY_PASSWORD:-motionix-ci-test}" \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --out "$APK" app-release-aligned.apk
+          echo "Re-signed with v1+v2+v3."
+
       # A cryptographically verified signature is a release gate: if the
       # APK cannot be verified, the run fails and nothing is published.
-      # v1 must be present too: AGP omits it when minSdk >= 24, and Vivo's
-      # installer rejects v2-only sideloaded APKs as "package invalid".
       - name: Verify APK signature (release gate)
         run: |
           set -euo pipefail
@@ -91,10 +120,12 @@ jobs:
           echo "Using $APKSIGNER"
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee apksigner.log
           if [ -f android/app/keys/ci-test-signing.jks ]; then
-            grep -q "Verified using v1 (JAR signing): true" apksigner.log \
+            grep -Eq "Verified using v1 scheme \(JAR signing\): true" apksigner.log \
               || { echo "::error::v1 (JAR) signature missing - OEM installers need it"; exit 1; }
-            grep -q "Verified using v2 (APK Signature Scheme 2): true" apksigner.log \
+            grep -Eq "Verified using v2 scheme \(APK Signature Scheme v2\): true" apksigner.log \
               || { echo "::error::v2 signature missing"; exit 1; }
+            grep -Eq "Verified using v3 scheme \(APK Signature Scheme v3\): true" apksigner.log \
+              || { echo "::error::v3 signature missing"; exit 1; }
           fi
 
       - name: Stage release APK and notes
