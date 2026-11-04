@@ -11,11 +11,11 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
-    name: Analyze, test, build APK
+    name: Analyze, test, build, verify, release APK
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -79,9 +79,57 @@ jobs:
           MOTIONIX_KEY_PASSWORD: ${{ secrets.CI_KEY_PASSWORD }}
         run: flutter build apk --release
 
-      - name: Upload APK artifact
+      # A cryptographically verified signature is a release gate: if the
+      # APK cannot be verified, the run fails and nothing is published.
+      # (v0.1.0 lesson: the APK left CI healthy but the chat file transfer
+      # corrupted it in transit - direct GitHub download avoids that.)
+      - name: Verify APK signature (release gate)
+        run: |
+          set -euo pipefail
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)"
+          echo "Using $APKSIGNER"
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+
+      - name: Stage release APK and notes
+        run: |
+          set -euo pipefail
+          VERSION="$(awk '/^version:/ {print $2}' pubspec.yaml | cut -d'+' -f1)"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          cp build/app/outputs/flutter-apk/app-release.apk "Motionix-v${VERSION}.apk"
+          SHA="$(sha256sum "Motionix-v${VERSION}.apk" | awk '{print $1}')"
+          echo "APK_SHA256=$SHA" >> "$GITHUB_ENV"
+          {
+            echo "## Motionix v${VERSION} — Phase 1 engine proof"
+            echo
+            echo "arm64-v8a release APK (Android 7.0+, ~51 MB)."
+            echo
+            echo "Install: open this page on your phone, download the APK below, then"
+            echo "tap it in your notifications/Downloads and allow"
+            echo "'Install unknown apps' for your browser when asked."
+            echo
+            echo '```'
+            echo "sha256: $SHA"
+            echo '```'
+          } > release_notes.md
+
+      - name: Upload APK artifact (backup)
         uses: actions/upload-artifact@v4
         with:
           name: motionix-apk-${{ github.run_number }}
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: Motionix-v*.apk
           if-no-files-found: error
+
+      # Release assets are direct-download raw files (no zip wrapping),
+      # publicly reachable for a public repo - phones fetch the exact bytes
+      # CI produced, straight from GitHub's CDN.
+      - name: Publish GitHub Release (direct-download APK)
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Motionix v${{ env.VERSION }}
+          body_path: release_notes.md
+          files: Motionix-v${{ env.VERSION }}.apk
+          fail_on_unmatched_files: true
+          make_latest: true

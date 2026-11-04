@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/branding/motionix_hero.png" width="380" alt="Motionix logo — woven infinity-M ribbon"></p>
+
 # Motionix
 
 **Mobile video editing — advanced as hell, smooth as heaven.**
@@ -10,6 +12,15 @@ and still smooth on 4 GB-RAM phones.
 - **Engine**: C++ core (`core/`) linked through `dart:ffi` as `libmotionix_core.so`
 - **Media**: Media3 Transformer (hardware codecs; the CPU never touches pixels)
 - **Platform**: Android-first (iOS later)
+
+## Download the current build
+
+Grab the latest APK straight from
+[**Releases**](https://github.com/xxnavdeep07xx-droid/Motionix/releases) —
+open the page on your phone, tap the `Motionix-v*.apk` asset, then allow
+"Install unknown apps" for your browser when prompted. (arm64-v8a,
+Android 7.0+. Every release APK is signature-verified by CI before it is
+published.)
 
 ## Status — Phase 1: Engine proof
 
